@@ -23,9 +23,19 @@ jobs:
 
     - name: Run tests
       run: ./vendor/bin/phpunit
-      
+
     - name: Install lftp
       run: sudo apt-get install -y lftp
 
     - name: Deploy to FTP
-      run: sh deploy.sh
+      run: |
+        lftp -c "open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_SERVER }} && mirror -R ./path/to/deploy /remote/path"
+
+    - name: Handle deployment errors
+      run: |
+        if [ $? -ne 0 ]; then
+          echo "FTP deployment failed"
+          exit 1
+        else
+          echo "FTP deployment successful"
+        fi
