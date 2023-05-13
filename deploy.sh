@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # FTP server details
-HOST="ftp.example.com"
+HOST="45.79.141.222"
 USERNAME="toxic"
 PASSWORD="Jesuisroot123@"
 
