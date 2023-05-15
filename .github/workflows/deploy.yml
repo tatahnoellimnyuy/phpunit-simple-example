@@ -40,7 +40,18 @@ jobs:
         continue-on-error: true
       
       - name: Handle deployment errors
-        if: ${{ steps.InstallDependencies.outcome != 'success' || steps.RunTests.outcome != 'success' || steps.InstallFtp.outcome != 'success' || steps.DeployToFtp.outcome != 'success' }}
+        if: ${{ always() }}
         run: |
-          echo "Pipeline failed at step: ${{ job.steps[steps.DeployToFtp.id].name }}"
-          exit 1
+          if [[ ${{ steps.InstallDependencies.outcome }} != 'success' ]]; then
+            echo "Pipeline failed at step: Install dependencies"
+            exit 1
+          elif [[ ${{ steps.RunTests.outcome }} != 'success' ]]; then
+            echo "Pipeline failed at step: Run tests"
+            exit 1
+          elif [[ ${{ steps.InstallFtp.outcome }} != 'success' ]]; then
+            echo "Pipeline failed at step: Install lftp"
+            exit 1
+          elif [[ ${{ steps.DeployToFtp.outcome }} != 'success' ]]; then
+            echo "Pipeline failed at step: Deploy to FTP"
+            exit 1
+          fi
