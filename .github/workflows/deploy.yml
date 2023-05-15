@@ -1,3 +1,4 @@
+Copy code
 name: CI/CD Pipeline
 
 on:
@@ -23,34 +24,24 @@ jobs:
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
         continue-on-error: true
       
-      - name: Check Install dependencies status
-        id: CheckInstallDependenciesStatus
-        run: echo "::set-output name=status::${{ job.steps.InstallDependencies.outcome }}"
-
       - name: Run tests
         id: RunTests
         run: ./vendor/bin/phpunit
         continue-on-error: true
-      
-      - name: Check Run tests status
-        id: CheckRunTestsStatus
-        run: echo "::set-output name=status::${{ job.steps.RunTests.outcome }}"
       
       - name: Install lftp
         id: InstallFtp
         run: sudo apt-get install -y lftp
         continue-on-error: true
       
-      - name: Check Install lftp status
-        id: CheckInstallFtpStatus
-        run: echo "::set-output name=status::${{ job.steps.InstallFtp.outcome }}"
-
       - name: Deploy to FTP
         id: DeployToFtp
         run: |
           lftp -c "open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_SERVER }} && mirror -R ./path/to/deploy /remote/path"
         continue-on-error: true
       
-      - name: Check Deploy to FTP status
-        id: CheckDeployToFtpStatus
-        run: echo "::set-output name=status::${{ job.steps.DeployToFtp.outcome }}"
+      - name: Handle deployment errors
+        if: ${{ steps.InstallDependencies.outcome != 'success' || steps.RunTests.outcome != 'success' || steps.InstallFtp.outcome != 'success' || steps.DeployToFtp.outcome != 'success' }}
+        run: |
+          echo "Pipeline failed at step: ${{ job.steps[steps.DeployToFtp.id].name }}"
+          exit 1
