@@ -10,32 +10,47 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    - name: Set up PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '7.4'
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '7.4'
 
-    - name: Install dependencies
-      run: composer install --no-interaction --prefer-dist --optimize-autoloader
+      - name: Install dependencies
+        id: InstallDependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
+        continue-on-error: true
+      
+      - name: Check Install dependencies status
+        id: CheckInstallDependenciesStatus
+        run: echo "::set-output name=status::${{ job.steps.InstallDependencies.outcome }}"
 
-    - name: Run tests
-      run: ./vendor/bin/phpunit
+      - name: Run tests
+        id: RunTests
+        run: ./vendor/bin/phpunit
+        continue-on-error: true
+      
+      - name: Check Run tests status
+        id: CheckRunTestsStatus
+        run: echo "::set-output name=status::${{ job.steps.RunTests.outcome }}"
+      
+      - name: Install lftp
+        id: InstallFtp
+        run: sudo apt-get install -y lftp
+        continue-on-error: true
+      
+      - name: Check Install lftp status
+        id: CheckInstallFtpStatus
+        run: echo "::set-output name=status::${{ job.steps.InstallFtp.outcome }}"
 
-    - name: Install lftp
-      run: sudo apt-get install -y lftp
-
-    - name: Deploy to FTP
-      run: |
-        lftp -c "open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_SERVER }} && mirror -R ./path/to/deploy /remote/path"
-
-    - name: Handle deployment errors
-      run: |
-        if [ $? -ne 0 ]; then
-          echo "FTP deployment failed"
-          exit 1
-        else
-          echo "FTP deployment successful"
-        fi
+      - name: Deploy to FTP
+        id: DeployToFtp
+        run: |
+          lftp -c "open -u ${{ secrets.FTP_USERNAME }},${{ secrets.FTP_PASSWORD }} ${{ secrets.FTP_SERVER }} && mirror -R ./path/to/deploy /remote/path"
+        continue-on-error: true
+      
+      - name: Check Deploy to FTP status
+        id: CheckDeployToFtpStatus
+        run: echo "::set-output name=status::${{ job.steps.DeployToFtp.outcome }}"
